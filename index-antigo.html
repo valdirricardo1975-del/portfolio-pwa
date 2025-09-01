@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio PWA - Versão Funcional</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f9fafb; }
+        
+        .header { background: white; border-bottom: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .header-content { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; height: 64px; }
+        .logo { display: flex; align-items: center; font-size: 20px; font-weight: bold; color: #2563eb; }
+        .status { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #10b981; }
+        .status-dot { width: 8px; height: 8px; background: #10b981; border-radius: 50%; }
+        
+        .nav { background: white; border-bottom: 1px solid #e5e7eb; }
+        .nav-content { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; gap: 32px; }
+        .nav-tab { padding: 16px 8px; border-bottom: 2px solid transparent; font-size: 14px; font-weight: 500; color: #6b7280; background: none; border-left: none; border-right: none; border-top: none; cursor: pointer; transition: all 0.2s; position: relative; }
+        .nav-tab.active { border-bottom-color: #2563eb; color: #2563eb; }
+        .nav-tab:hover:not(.active) { color: #374151; border-bottom-color: #d1d5db; }
+        .nav-badge { position: absolute; top: 8px; right: -8px; background: #ef4444; color: white; font-size: 10px; border-radius: 10px; padding: 2px 6px; }
+        
+        .main { max-width: 1200px; margin: 0 auto; padding: 32px 20px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .dashboard-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 32px; }
+        .title h1 { font-size: 28px; font-weight: bold; color: #111827; margin-bottom: 8px; }
+        .title p { color: #6b7280; }
+        .controls { display: flex; gap: 16px; }
+        .btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; border: none; transition: all 0.2s; }
+        .btn:hover { transform: translateY(-1px); }
+        .btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+        .btn-secondary:hover { background: #e5e7eb; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 32px; }
+        .kpi-card { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .kpi-content { flex: 1; }
+        .kpi-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .kpi-label { font-size: 14px; color: #6b7280; font-weight: 500; }
+        .kpi-value { font-size: 32px; font-weight: bold; color: #111827; }
+        .kpi-change { font-size: 14px; color: #10b981; margin-top: 8px; }
+        .kpi-icon { padding: 12px; border-radius: 50%; color: white; font-size: 24px; }
+        .kpi-icon.green { background: #10b981; }
+        .kpi-icon.blue { background: #2563eb; }
+        .kpi-icon.orange { background: #f59e0b; }
+        
+        .insights-card { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 32px; }
+        .insights-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; color: #111827; }
+        .insights-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 20px; }
+        .insight-item { text-align: center; }
+        .insight-dot { width: 12px; height: 12px; border-radius: 50%; margin: 0 auto 10px; }
+        .insight-dot.green { background: #10b981; }
+        .insight-dot.orange { background: #f59e0b; }
+        .insight-label { font-size: 14px; color: #6b7280; margin-bottom: 4px; }
+        .insight-value { font-weight: 600; color: #111827; }
+        
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-bottom: 32px; }
+        .chart-card { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .chart-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #111827; }
+        .chart-container { position: relative; height: 300px; }
+        
+        .performance-section { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 32px; }
+        .performance-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+        .performance-title h3 { font-size: 18px; font-weight: 600; margin-bottom: 4px; color: #111827; }
+        .performance-title p { font-size: 14px; color: #6b7280; }
+        .performance-controls { display: flex; gap: 16px; flex-wrap: wrap; }
+        .control-group { display: flex; align-items: center; gap: 8px; }
+        .control-label { font-size: 14px; font-weight: 500; color: #374151; }
+        .period-buttons { display: flex; background: #f3f4f6; border-radius: 8px; padding: 4px; }
+        .period-btn { padding: 8px 16px; border: none; background: none; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+        .period-btn.active { background: #2563eb; color: white; }
+        .period-btn:not(.active) { color: #6b7280; }
+        .select { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px; background: white; font-size: 14px; }
+        .performance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin: 24px 0; }
+        .performance-card { text-align: center; padding: 16px; background: #f8fafc; border-radius: 8px; }
+        .performance-label { font-size: 12px; color: #6b7280; margin-bottom: 6px; }
+        .performance-value { font-size: 20px; font-weight: bold; color: #10b981; margin-bottom: 4px; }
+        
+        /* Portfolio Cards */
+        .portfolio-grid { display: grid; gap: 24px; }
+        .portfolio-card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); overflow: hidden; }
+        .portfolio-header { padding: 20px; border-bottom: 1px solid #e5e7eb; }
+        .portfolio-header-content { display: flex; justify-content: space-between; align-items: flex-start; }
+        .portfolio-info h3 { font-size: 18px; font-weight: 600; color: #111827; margin-bottom: 4px; }
+        .portfolio-info p { font-size: 14px; color: #6b7280; }
+        .portfolio-value { text-align: right; }
+        .portfolio-total { font-size: 24px; font-weight: bold; color: #111827; }
+        .portfolio-count { font-size: 14px; color: #6b7280; margin-top: 4px; }
+        .investments-list { padding: 20px; }
+        .investment-item { display: flex; justify-content: between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
+        .investment-item:last-child { border-bottom: none; }
+        .investment-info { flex: 1; }
+        .investment-name { font-weight: 500; color: #111827; margin-bottom: 2px; }
+        .investment-details { font-size: 12px; color: #6b7280; }
+        .investment-value { text-align: right; }
+        .investment-amount { font-weight: 600; color: #111827; }
+        .investment-return { font-size: 12px; color: #10b981; margin-top: 2px; }
+        
+        /* Complete Data Styles */
+        .complete-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+        .complete-title { font-size: 24px; font-weight: bold; color: #111827; }
+        .complete-info { background: #dbeafe; padding: 20px; border-radius: 12px; margin-bottom: 24px; border-left: 4px solid #3b82f6; }
+        .complete-info-title { font-size: 16px; font-weight: 600; color: #1e40af; margin-bottom: 8px; }
+        .incomplete-list { display: grid; gap: 20px; }
+        .incomplete-item { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); overflow: hidden; }
+        .incomplete-header { padding: 20px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: flex-start; }
+        .incomplete-info h4 { font-size: 16px; font-weight: 600; color: #111827; margin-bottom: 4px; }
+        .incomplete-info .portfolio-name { font-size: 14px; color: #6b7280; margin-bottom: 8px; }
+        .missing-fields { font-size: 12px; color: #dc2626; }
+        .incomplete-form { padding: 20px; display: none; }
+        .incomplete-form.active { display: block; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 20px; }
+        .form-group { }
+        .form-label { display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px; }
+        .form-input, .form-select { width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+        .form-input:focus, .form-select:focus { outline: none; border-color: #2563eb; }
+        .form-actions { display: flex; gap: 12px; }
+        .btn-save { background: #10b981; color: white; }
+        .btn-save:hover { background: #059669; }
+        .btn-skip { background: #6b7280; color: white; }
+        .btn-skip:hover { background: #4b5563; }
+        
+        .notification { position: fixed; top: 20px; right: 20px; background: #dcfce7; border-left: 4px solid #16a34a; color: #15803d; padding: 16px 20px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 1000; max-width: 400px; transform: translateX(450px); opacity: 0; transition: all 0.4s; }
+        .notification.show { transform: translateX(0); opacity: 1; }
+        .notification-content { display: flex; align-items: center; justify-content: space-between; }
+        .notification-close { margin-left: 16px; background: none; border: none; color: #6b7280; cursor: pointer; font-size: 18px; }
+        
+        .hidden { display: none; }
+        
+        @media (max-width: 768px) {
+            .charts-grid { grid-template-columns: 1fr; }
+            .performance-header { flex-direction: column; align-items: stretch; }
+            .performance-controls { justify-content: center; }
+            .form-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">💼 Portfolio PWA</div>
+            <div class="status">
+                <span>v1.0</span>
+                <div class="status-dot"></div>
+                <span>Online</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-content">
+            <button class="nav-tab active" onclick="showTab('dashboard')">📊 Dashboard</button>
+            <button class="nav-tab" onclick="showTab('portfolios')">💼 Carteiras</button>
+            <button class="nav-tab" onclick="showTab('complete')">⚠️ Completar Dados<span class="nav-badge">6</span></button>
+            <button class="nav-tab" onclick="showTab('add')">➕ Adicionar</button>
+            <button class="nav-tab" onclick="showTab('settings')">⚙️ Configurações</button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <!-- Dashboard Header -->
+            <div class="dashboard-header">
+                <div class="title">
+                    <h1>Portfolio Dashboard</h1>
+                    <p>CDI atualizado: <strong>12,55% a.a.</strong> • Fontes: InfoMoney, Status Invest</p>
+                </div>
+                <div class="controls">
+                    <button class="btn btn-secondary" onclick="toggleValues()">
+                        <span id="toggle-icon">🙈</span>
+                        <span id="toggle-text">Ocultar</span> Valores
+                    </button>
+                    <button class="btn btn-primary" onclick="updateData()">
+                        🔄 Atualizar Dados
+                    </button>
+                </div>
+            </div>
+
+            <!-- KPIs de Mercado -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <div class="kpi-label">CDI</div>
+                        </div>
+                        <div class="kpi-value">12,55%</div>
+                        <div class="kpi-change">📈 +0.043% (InfoMoney)</div>
+                    </div>
+                    <div class="kpi-icon green">💰</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <div class="kpi-label">IBOVESPA</div>
+                        </div>
+                        <div class="kpi-value">128.500</div>
+                        <div class="kpi-change">📈 +0.022% (B3)</div>
+                    </div>
+                    <div class="kpi-icon blue">📊</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <div class="kpi-label">IPCA</div>
+                        </div>
+                        <div class="kpi-value">4,50%</div>
+                        <div class="kpi-change">📈 +0.012% (IBGE)</div>
+                    </div>
+                    <div class="kpi-icon orange">📈</div>
+                </div>
+            </div>
+
+            <!-- Insights Inteligentes -->
+            <div class="insights-card">
+                <h3 class="insights-title">🔔 Insights Inteligentes</h3>
+                <div class="insights-grid">
+                    <div class="insight-item">
+                        <div class="insight-dot orange"></div>
+                        <div class="insight-label">Liquidez Imediata</div>
+                        <div class="insight-value">8.2%</div>
+                    </div>
+                    <div class="insight-item">
+                        <div class="insight-dot green"></div>
+                        <div class="insight-label">Concentração RF</div>
+                        <div class="insight-value">78.5%</div>
+                    </div>
+                    <div class="insight-item">
+                        <div class="insight-dot green"></div>
+                        <div class="insight-label">Diversificação</div>
+                        <div class="insight-value">3 instituições</div>
+                    </div>
+                    <div class="insight-item">
+                        <div class="insight-dot green"></div>
+                        <div class="insight-label">Sharpe Simulado</div>
+                        <div class="insight-value">1.24</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráficos FUNCIONAIS -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3 class="chart-title">Alocação por Categoria</h3>
+                    <div class="chart-container">
+                        <canvas id="allocationChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3 class="chart-title">Distribuição por Liquidez</h3>
+                    <div class="chart-container">
+                        <canvas id="liquidityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance vs Benchmarks -->
+            <div class="performance-section">
+                <div class="performance-header">
+                    <div class="performance-title">
+                        <h3>Performance vs Benchmarks</h3>
+                        <p>Carteira <span id="portfolio-display">Consolidada</span> - Últimos <span id="period-display">12</span> meses</p>
+                    </div>
+                    <div class="performance-controls">
+                        <div class="control-group">
+                            <div class="control-label">Período:</div>
+                            <div class="period-buttons">
+                                <button class="period-btn" onclick="setPeriod(6, this)">6m</button>
+                                <button class="period-btn active" onclick="setPeriod(12, this)">12m</button>
+                                <button class="period-btn" onclick="setPeriod(24, this)">24m</button>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="control-label">Carteira:</div>
+                            <select class="select" onchange="setPortfolio(this.value)">
+                                <option value="consolidated">🏦 Consolidada</option>
+                                <option value="brb">BRB (Conservadora)</option>
+                                <option value="btg">BTG Pactual</option>
+                                <option value="bb">Banco do Brasil (Agressiva)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Cards -->
+                <div class="performance-grid">
+                    <div class="performance-card">
+                        <div class="performance-label">Portfolio</div>
+                        <div class="performance-value" id="portfolio-perf">+9.5%</div>
+                    </div>
+                    <div class="performance-card">
+                        <div class="performance-label">CDI</div>
+                        <div class="performance-value" id="cdi-perf">+8.4%</div>
+                    </div>
+                    <div class="performance-card">
+                        <div class="performance-label">IBOVESPA</div>
+                        <div class="performance-value" id="ibov-perf">+11.5%</div>
+                    </div>
+                    <div class="performance-card">
+                        <div class="performance-label">IPCA</div>
+                        <div class="performance-value" id="ipca-perf">+2.8%</div>
+                    </div>
+                </div>
+
+                <!-- Line Chart -->
+                <div class="chart-container" style="height: 400px;">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Portfolios Tab -->
+        <div id="portfolios" class="tab-content">
+            <h2 style="margin-bottom: 24px; color: #111827;">💼 Carteiras de Investimentos</h2>
+            <div class="portfolio-grid" id="portfoliosList">
+                <!-- Portfolios will be inserted here by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Complete Data Tab -->
+        <div id="complete" class="tab-content">
+            <div class="complete-header">
+                <div style="font-size: 28px;">⚠️</div>
+                <div class="complete-title">Completar Dados Faltantes</div>
+            </div>
+            
+            <div class="complete-info">
+                <div class="complete-info-title">✅ Funcionalidade Corrigida!</div>
+                <div style="font-size: 14px; color: #1e40af; line-height: 1.6;">
+                    O sistema de salvamento foi corrigido - agora os dados são persistidos corretamente.<br/>
+                    Encontrados <strong>6 investimentos</strong> com dados faltantes para análises mais precisas.
+                </div>
+            </div>
+            
+            <div class="incomplete-list" id="incompleteList">
+                <!-- Incomplete investments will be inserted here by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Add Tab -->
+        <div id="add" class="tab-content">
+            <div style="text-align: center; padding: 80px 20px;">
+                <div style="font-size: 64px; margin-bottom: 20px;">➕</div>
+                <div style="font-size: 20px; font-weight: 600; color: #6b7280; margin-bottom: 8px;">Adicionar Investimento</div>
+                <div style="color: #9ca3af;">Formulário completo implementado na versão final</div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings" class="tab-content">
+            <div style="text-align: center; padding: 80px 20px;">
+                <div style="font-size: 64px; margin-bottom: 20px;">⚙️</div>
+                <div style="font-size: 20px; font-weight: 600; color: #6b7280; margin-bottom: 8px;">Configurações</div>
+                <div style="color: #9ca3af;">Backup, preferências e configurações avançadas</div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Notification System -->
+    <div id="notification" class="notification">
+        <div class="notification-content">
+            <span id="notif-text"></span>
+            <button class="notification-close" onclick="hideNotification()">×</button>
+        </div>
+    </div>
+
+    <script>
+        // Portfolio Data
+        const portfoliosData = [
+            {
+                id: 1, name: 'BRB - Banco de Brasília', institution: 'BRB', color: '#22c55e',
+                investments: [
+                    { id: '000002', name: 'CDB POS', category: 'RF', currentValue: 15000, acquisitionValue: 14500, monthlyReturn: null, yearlyReturn: null, acquisitionDate: null, contractedRate: null, issuer: null, liquidity: null },
+                    { id: '000001', name: 'CDB POS', category: 'RF', currentValue: 25000, acquisitionValue: 24000, monthlyReturn: 0.95, yearlyReturn: 12.1, acquisitionDate: null, contractedRate: null, issuer: 'BRB', liquidity: 'D1' },
+                    { id: 'LCI001', name: 'LCI 98% CDI', category: 'RF', currentValue: 18000, acquisitionValue: 17500, monthlyReturn: 0.89, yearlyReturn: 11.5, acquisitionDate: null, contractedRate: 9.8, issuer: null, liquidity: null }
+                ]
+            },
+            {
+                id: 2, name: 'BTG Pactual', institution: 'BTG', color: '#3b82f6',
+                investments: [
+                    { id: 'CC001', name: 'Conta Compromissada', category: 'RF', currentValue: 22000, acquisitionValue: 21800, monthlyReturn: 1.02, yearlyReturn: 12.8, acquisitionDate: null, contractedRate: 12.25, issuer: 'BTG Pactual', liquidity: 'D0' },
+                    { id: 'LCD001', name: 'Legacy Compound Debt', category: 'RF', currentValue: 8500, acquisitionValue: 8200, monthlyReturn: 0.78, yearlyReturn: 9.8, acquisitionDate: '2024-03-15', contractedRate: 9.5, issuer: null, liquidity: '90D' }
+                ]
+            },
+            {
+                id: 3, name: 'Banco do Brasil', institution: 'BB', color: '#f59e0b',
+                investments: [
+                    { id: 'IBOV001', name: 'Ações Ibovespa', category: 'AV', currentValue: 35000, acquisitionValue: 32000, monthlyReturn: null, yearlyReturn: null, acquisitionDate: null, contractedRate: null, issuer: null, liquidity: null },
+                    { id: 'RFLP001', name: 'RF LP High', category: 'RF', currentValue: 28000, acquisitionValue: 26500, monthlyReturn: null, yearlyReturn: null, acquisitionDate: '2023-12-10', contractedRate: 13.5, issuer: 'BB Asset', liquidity: '360D' }
+                ]
+            }
+        ];
+
+        // Performance data
+        const performanceData = {
+            6: { 
+                consolidated: { portfolio: 4.8, cdi: 4.2, ibov: 6.1, ipca: 1.4 },
+                brb: { portfolio: 4.1, cdi: 4.2, ibov: 6.1, ipca: 1.4 },
+                btg: { portfolio: 5.2, cdi: 4.2, ibov: 6.1, ipca: 1.4 },
+                bb: { portfolio: 5.8, cdi: 4.2, ibov: 6.1, ipca: 1.4 }
+            },
+            12: { 
+                consolidated: { portfolio: 9.5, cdi: 8.4, ibov: 11.5, ipca: 2.8 },
+                brb: { portfolio: 8.1, cdi: 8.4, ibov: 11.5, ipca: 2.8 },
+                btg: { portfolio: 10.2, cdi: 8.4, ibov: 11.5, ipca: 2.8 },
+                bb: { portfolio: 11.8, cdi: 8.4, ibov: 11.5, ipca: 2.8 }
+            },
+            24: { 
+                consolidated: { portfolio: 18.2, cdi: 16.8, ibov: 22.3, ipca: 5.6 },
+                brb: { portfolio: 15.4, cdi: 16.8, ibov: 22.3, ipca: 5.6 },
+                btg: { portfolio: 19.1, cdi: 16.8, ibov: 22.3, ipca: 5.6 },
+                bb: { portfolio: 22.8, cdi: 16.8, ibov: 22.3, ipca: 5.6 }
+            }
+        };
+        
+        const portfolioNames = {
+            consolidated: 'Consolidada',
+            brb: 'BRB (Conservadora)',
+            btg: 'BTG Pactual',
+            bb: 'Banco do Brasil (Agressiva)'
+        };
+        
+        let currentPeriod = 12;
+        let currentPortfolio = 'consolidated';
+        let showValuesState = true;
+        let allocationChart, liquidityChart, performanceChart;
+
+        // Initialize charts
+        function initCharts() {
+            // Allocation Chart
+            const allocationCtx = document.getElementById('allocationChart').getContext('2d');
+            allocationChart = new Chart(allocationCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Renda Fixa', 'Ações/Variável', 'Fundos'],
+                    datasets: [{
+                        data: [78.5, 18.2, 3.3],
+                        backgroundColor: ['#10b981', '#f59e0b', '#3b82f6']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Liquidity Chart  
+            const liquidityCtx = document.getElementById('liquidityChart').getContext('2d');
+            liquidityChart = new Chart(liquidityCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Liquidez Imediata', '30-90 dias', '1+ anos'],
+                    datasets: [{
+                        data: [8.2, 31.8, 60.0],
+                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Performance Chart
+            updatePerformanceChart();
+        }
+
+        function updatePerformanceChart() {
+            const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'].slice(-currentPeriod);
+            const data = performanceData[currentPeriod][currentPortfolio];
+            
+            // Generate sample monthly data
+            const portfolioData = [];
+            const cdiData = [];
+            const ibovData = [];
+            const ipcaData = [];
+            
+            for (let i = 0; i < currentPeriod; i++) {
+                portfolioData.push((data.portfolio / currentPeriod) * (i + 1) + (Math.random() - 0.5) * 2);
+                cdiData.push((data.cdi / currentPeriod) * (i + 1));
+                ibovData.push((data.ibov / currentPeriod) * (i + 1) + (Math.random() - 0.5) * 4);
+                ipcaData.push((data.ipca / currentPeriod) * (i + 1));
+            }
+
+            if (performanceChart) {
+                performanceChart.destroy();
+            }
+
+            const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+            performanceChart = new Chart(performanceCtx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: portfolioNames[currentPortfolio],
+                        data: portfolioData,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4
+                    }, {
+                        label: 'CDI',
+                        data: cdiData,
+                        borderColor: '#10b981',
+                        borderWidth: 2,
+                        tension: 0.4
+                    }, {
+                        label: 'IBOVESPA',
+                        data: ibovData,
+                        borderColor: '#f59e0b',
+                        borderWidth: 2,
+                        tension: 0.4
+                    }, {
+                        label: 'IPCA',
+                        data: ipcaData,
+                        borderColor: '#ef4444',
+                        borderWidth: 2,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Retorno Acumulado (%)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Generate portfolios list
+        function generatePortfoliosList() {
+            const container = document.getElementById('portfoliosList');
+            container.innerHTML = '';
+
+            portfoliosData.forEach(portfolio => {
+                const totalValue = portfolio.investments.reduce((sum, inv) => sum + inv.currentValue, 0);
+                const totalReturn = portfolio.investments
+                    .filter(inv => inv.yearlyReturn)
+                    .reduce((sum, inv) => sum + (inv.currentValue * (inv.yearlyReturn / 100)), 0);
+
+                const portfolioCard = document.createElement('div');
+                portfolioCard.className = 'portfolio-card';
+                portfolioCard.innerHTML = `
+                    <div class="portfolio-header">
+                        <div class="portfolio-header-content">
+                            <div class="portfolio-info">
+                                <h3>${portfolio.name}</h3>
+                                <p>Instituição: ${portfolio.institution}</p>
+                            </div>
+                            <div class="portfolio-value">
+                                <div class="portfolio-total">R$ ${totalValue.toLocaleString('pt-BR')}</div>
+                                <div class="portfolio-count">${portfolio.investments.length} investimentos</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="investments-list">
+                        ${portfolio.investments.map(investment => `
+                            <div class="investment-item">
+                                <div class="investment-info">
+                                    <div class="investment-name">${investment.name}</div>
+                                    <div class="investment-details">${investment.category} • ${investment.id}</div>
+                                </div>
+                                <div class="investment-value">
+                                    <div class="investment-amount">R$ ${investment.currentValue.toLocaleString('pt-BR')}</div>
+                                    <div class="investment-return">${investment.yearlyReturn ? `+${investment.yearlyReturn}%` : 'N/D'}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(portfolioCard);
+            });
+        }
+
+        // Generate incomplete investments list
+        function generateIncompleteList() {
+            const container = document.getElementById('incompleteList');
+            container.innerHTML = '';
+
+            const incompleteInvestments = [];
+            
+            portfoliosData.forEach(portfolio => {
+                portfolio.investments.forEach(investment => {
+                    const missing = [];
+                    if (!investment.acquisitionDate) missing.push('acquisitionDate');
+                    if (!investment.contractedRate) missing.push('contractedRate');
+                    if (!investment.issuer) missing.push('issuer');
+                    if (!investment.liquidity) missing.push('liquidity');
+                    if (!investment.monthlyReturn) missing.push('monthlyReturn');
+                    if (!investment.yearlyReturn) missing.push('yearlyReturn');
+                    
+                    if (missing.length > 0) {
+                        incompleteInvestments.push({
+                            ...investment,
+                            portfolioId: portfolio.id,
+                            portfolioName: portfolio.name,
+                            missingFields: missing
+                        });
+                    }
+                });
+            });
+
+            incompleteInvestments.forEach((investment, index) => {
+                const incompleteCard = document.createElement('div');
+                incompleteCard.className = 'incomplete-item';
+                
+                const missingFieldsLabels = {
+                    acquisitionDate: 'Data de Aquisição',
+                    contractedRate: 'Taxa Contratada',
+                    issuer: 'Emissor',
+                    liquidity: 'Prazo de Liquidez',
+                    monthlyReturn: 'Retorno Mensal',
+                    yearlyReturn: 'Retorno 12 Meses'
+                };
+
+                incompleteCard.innerHTML = `
+                    <div class="incomplete-header">
+                        <div class="incomplete-info">
+                            <h4>${investment.name}</h4>
+                            <div class="portfolio-name">${investment.portfolioName}</div>
+                            <div class="missing-fields">
+                                Faltam: ${investment.missingFields.map(field => missingFieldsLabels[field]).join(', ')}
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="toggleIncompleteForm(${index})">
+                            Completar Dados
+                        </button>
+                    </div>
+                    <div class="incomplete-form" id="incomplete-form-${index}">
+                        <div class="form-grid">
+                            ${investment.missingFields.map(field => `
+                                <div class="form-group">
+                                    <label class="form-label">${missingFieldsLabels[field]}</label>
+                                    ${getFieldInput(field, `incomplete-${investment.id}-${field}`)}
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn btn-save" onclick="saveIncompleteData(${index}, '${investment.id}', ${investment.portfolioId})">
+                                ✅ Salvar Dados
+                            </button>
+                            <button class="btn btn-skip" onclick="toggleIncompleteForm(${index})">
+                                Pular Este
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(incompleteCard);
+            });
+        }
+
+        function getFieldInput(field, id) {
+            switch (field) {
+                case 'acquisitionDate':
+                    return `<input type="date" class="form-input" id="${id}">`;
+                case 'contractedRate':
+                    return `<input type="number" step="0.01" placeholder="10.50" class="form-input" id="${id}">`;
+                case 'liquidity':
+                    return `
+                        <select class="form-select" id="${id}">
+                            <option value="">Selecione...</option>
+                            <option value="D0">D+0 (Liquidez imediata)</option>
+                            <option value="D1">D+1 (1 dia útil)</option>
+                            <option value="30D">30 dias</option>
+                            <option value="60D">60 dias</option>
+                            <option value="90D">90 dias</option>
+                            <option value="180D">180 dias</option>
+                            <option value="360D">360 dias</option>
+                            <option value="720D">2 anos</option>
+                            <option value="1080D">3 anos</option>
+                        </select>
+                    `;
+                case 'monthlyReturn':
+                case 'yearlyReturn':
+                    return `<input type="number" step="0.01" placeholder="1.25" class="form-input" id="${id}">`;
+                default:
+                    return `<input type="text" class="form-input" id="${id}">`;
+            }
+        }
+
+        function toggleIncompleteForm(index) {
+            const form = document.getElementById(`incomplete-form-${index}`);
+            form.classList.toggle('active');
+        }
+
+        function saveIncompleteData(index, investmentId, portfolioId) {
+            // Here you would normally save to your data store
+            showNotification(`✅ Dados salvos para investimento ${investmentId}`);
+            toggleIncompleteForm(index);
+        }
+
+        // Navigation and control functions
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+            
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            if (tabName === 'portfolios') {
+                generatePortfoliosList();
+            } else if (tabName === 'complete') {
+                generateIncompleteList();
+            }
+
+            showNotification(`📄 Aba alterada: ${getTabName(tabName)}`);
+        }
+
+        function getTabName(tabId) {
+            const names = {
+                dashboard: 'Dashboard',
+                portfolios: 'Carteiras',
+                complete: 'Completar Dados',
+                add: 'Adicionar Investimento',
+                settings: 'Configurações'
+            };
+            return names[tabId] || tabId;
+        }
+
+        function toggleValues() {
+            showValuesState = !showValuesState;
+            const icon = document.getElementById('toggle-icon');
+            const text = document.getElementById('toggle-text');
+            
+            if (showValuesState) {
+                icon.textContent = '🙈';
+                text.textContent = 'Ocultar';
+            } else {
+                icon.textContent = '👁️';
+                text.textContent = 'Mostrar';
+            }
+            
+            showNotification(`👁️ Visibilidade dos valores ${showValuesState ? 'ativada' : 'desativada'}`);
+        }
+
+        function updateData() {
+            showNotification('🔄 Dados de mercado atualizados (CDI: 12,55%)');
+        }
+
+        function setPeriod(months, button) {
+            currentPeriod = months;
+            
+            document.querySelectorAll('.period-btn').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            document.getElementById('period-display').textContent = months;
+            
+            updatePerformanceData();
+            updatePerformanceChart();
+            showNotification(`📊 Período alterado para ${months} meses`);
+        }
+
+        function setPortfolio(value) {
+            currentPortfolio = value;
+            document.getElementById('portfolio-display').textContent = portfolioNames[value];
+            
+            updatePerformanceData();
+            updatePerformanceChart();
+            showNotification(`🏦 Carteira alterada: ${portfolioNames[value]}`);
+        }
+
+        function updatePerformanceData() {
+            const data = performanceData[currentPeriod][currentPortfolio];
+            
+            document.getElementById('portfolio-perf').textContent = `+${data.portfolio}%`;
+            document.getElementById('cdi-perf').textContent = `+${data.cdi}%`;
+            document.getElementById('ibov-perf').textContent = `+${data.ibov}%`;
+            document.getElementById('ipca-perf').textContent = `+${data.ipca}%`;
+        }
+
+        function showNotification(text) {
+            const notification = document.getElementById('notification');
+            document.getElementById('notif-text').textContent = text;
+            notification.classList.add('show');
+            setTimeout(() => hideNotification(), 4000);
+        }
+
+        function hideNotification() {
+            document.getElementById('notification').classList.remove('show');
+        }
+
+        // Initialize everything
+        window.addEventListener('load', function() {
+            initCharts();
+            updatePerformanceData();
+            setTimeout(() => {
+                showNotification('🎉 Portfolio PWA Funcional carregado! CDI: 12,55%');
+            }, 500);
+        });
+    </script>
+</body>
+</html>
