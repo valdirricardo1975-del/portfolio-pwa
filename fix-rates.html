@@ -1,0 +1,27 @@
+<script>
+// Sobrescrever função antiga
+window.updateMarketRates = async function() {
+    const icon = document.getElementById('rates-update-icon');
+    icon.innerHTML = '<span class="spinner"></span>';
+    
+    try {
+        // API Banco Central
+        const response = await fetch('https://api.bcb.gov.br/dados/serie/bcdata.sgs.4391/dados/ultimos/1?formato=json');
+        const data = await response.json();
+        
+        if (data && data[0]) {
+            const cdi = parseFloat(data[0].valor);
+            document.getElementById('cdi-display').textContent = cdi.toFixed(2).replace('.', ',') + '%';
+            document.getElementById('cdi-rate').textContent = cdi.toFixed(2) + '% a.a.';
+            showNotification('✅ CDI atualizado: ' + cdi.toFixed(2) + '%');
+        }
+    } catch (error) {
+        showNotification('❌ Erro ao buscar taxas', 'error');
+    }
+    
+    icon.innerHTML = '🔄';
+}
+
+// Chamar ao carregar
+setTimeout(updateMarketRates, 2000);
+</script>
