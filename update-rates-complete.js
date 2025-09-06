@@ -1,5 +1,5 @@
 async function updateMarketRates() {
-    const updateButton = document.getElementById('update-rates-btn');
+    const updateButton = document.querySelectord('update-rates-btn');
     try {
         updateButton.innerHTML = '🔄 Atualizando...';
         updateButton.disabled = true;
